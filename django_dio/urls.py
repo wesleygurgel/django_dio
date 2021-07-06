@@ -23,10 +23,12 @@ urlpatterns = [
     path('soma/<int:numero_a>/<int:numero_b>/', views.soma),
     path('eventos/<titulo_evento>/', views.eventos),
     path('agenda/', views.lista_eventos),
+    path('agenda/evento/', views.evento),
     # path('', views.index),
     path('', RedirectView.as_view(url='/agenda/')),
     path('login/', views.login_user),
     path('login/submit', views.submit_login),
+    path('agenda/evento/submit', views.submit_evento),
     path('logout/', views.logout_user),
 
 ]
