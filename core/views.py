@@ -63,13 +63,40 @@ def submit_evento(request):
         data_evento = request.POST.get('data_evento')
         local = request.POST.get('local')
         descricao = request.POST.get('descricao')
+        id_evento = request.POST.get('id_evento')
         usuario = request.user
 
-        Evento.objects.create(titulo=titulo, data_evento=data_evento, descricao=descricao, local=local, usuario=usuario)
+        if id_evento:
+            event = Evento.objects.get(id=id_evento)
+            if event.usuario == usuario:
+                event.titulo = titulo
+                event.descricao = descricao
+                evento.data_evento = data_evento
+                event.local = local
+                event.save()
+
+        else:
+            Evento.objects.create(titulo=titulo, data_evento=data_evento, descricao=descricao, local=local,
+                                  usuario=usuario)
+
+    return redirect('/')
+
+
+@login_required(login_url='/login/')
+def delete_evento(request, id_evento):
+    user = request.user
+    event = Evento.objects.get(id=id_evento)
+
+    if user == event.usuario:
+        event.delete()
 
     return redirect('/')
 
 
 @login_required(login_url='/login/')
 def evento(request):
-    return render(request, 'evento.html')
+    id_evento = request.GET.get('id')
+    dados = {}
+    if id_evento:
+        dados['evento'] = Evento.objects.get(id=id_evento)
+    return render(request, 'evento.html', dados)
