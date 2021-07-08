@@ -1,8 +1,11 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from django.shortcuts import render, HttpResponse, redirect
 from core.models import Evento
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http.response import Http404, JsonResponse
+from datetime import datetime, timedelta
 
 
 # Create your views here.
@@ -27,9 +30,14 @@ def eventos(request, titulo_evento):
 def lista_eventos(request):
     usuario = request.user
     # evento = Evento.objects.all()
-    # Filtro usuario = evento = Evento.objects.filter(usuario=usuario)
-    evento = Evento.objects.filter(usuario=usuario)
-    context = {'eventos': evento}
+    data_atual = datetime.now() - timedelta(hours=1)
+    print(data_atual)
+
+    eventos_futuros = Evento.objects.filter(usuario=usuario, data_evento__gt=data_atual)
+    eventos_atrasados = Evento.objects.filter(usuario=usuario, data_evento__lt=data_atual)
+
+    context = {'eventos_futuros': eventos_futuros,
+               'evento_atrasados': eventos_atrasados}
     return render(request, 'agenda.html', context)
 
 
@@ -85,10 +93,15 @@ def submit_evento(request):
 @login_required(login_url='/login/')
 def delete_evento(request, id_evento):
     user = request.user
-    event = Evento.objects.get(id=id_evento)
+    try:
+        event = Evento.objects.get(id=id_evento)
+    except Exception:
+        raise Http404()
 
     if user == event.usuario:
         event.delete()
+    else:
+        raise Http404()
 
     return redirect('/')
 
@@ -100,3 +113,14 @@ def evento(request):
     if id_evento:
         dados['evento'] = Evento.objects.get(id=id_evento)
     return render(request, 'evento.html', dados)
+
+
+@login_required(login_url='/login/')
+def json_lista_evento(request, id_usuario):
+    usuario = User.objects.get(id=id_usuario)
+
+    event = Evento.objects.filter(usuario=usuario).values('id', 'titulo')
+
+    context = {'eventos': evento}
+    return JsonResponse(list(event), safe=False)
+
